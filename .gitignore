@@ -1,0 +1,11 @@
+
+# Created by https://www.gitignore.io/api/code
+# Edit at https://www.gitignore.io/?templates=code
+
+### Code ###
+.vscode
+.env
+.python-version
+*.jpg
+__pycache__
+# End of https://www.gitignore.io/api/code
