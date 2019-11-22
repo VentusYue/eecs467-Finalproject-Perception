@@ -1,5 +1,6 @@
 import cv2
 import numpy as np
+import time
 
 def find_biggest_contour(image):
     image = image.copy()
@@ -18,9 +19,13 @@ filename = "image.jpg"
 img = cv2.imread(filename)
 hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
 
-lower_orange = np.array([5, 50, 150])
-upper_orange = np.array([12, 200, 255])
+
+lower_orange = np.array([5, 0, 0])
+upper_orange = np.array([25, 200, 255])
+
 mask = cv2.inRange(hsv, lower_orange, upper_orange)
+mask = cv2.erode(mask, None, iterations=2)
+mask = cv2.dilate(mask, None, iterations=2)
 
 contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
 print(len(contours))
@@ -29,8 +34,7 @@ for contour in contours:
 
 cv2.imwrite("./mask.jpg", mask)
 cv2.imwrite("./contour.jpg", img)
-mask = cv2.erode(mask, None, iterations=2)
-mask = cv2.dilate(mask, None, iterations=2)
+
 _, mask = find_biggest_contour(mask)
 cv2.imwrite("./largest_contour.jpg",mask)
 gray = cv2.GaussianBlur(mask, (41, 41), 0)
