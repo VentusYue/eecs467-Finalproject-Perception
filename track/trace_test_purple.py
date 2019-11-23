@@ -21,10 +21,12 @@ def find_biggest_contour(image):
 def recognize_center(img):
     hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
 
-    lower_orange = np.array([5, 0, 0])
-    upper_orange = np.array([12, 255, 255])
+    lower_orange = np.array([50, 0, 50])
+    upper_orange = np.array([255, 255, 200])
     mask = cv2.inRange(hsv, lower_orange, upper_orange)
-
+    kernel = np.ones((3,3), np.uint8)
+    mask = cv2.erode(mask, kernel, iterations=2)
+    mask = cv2.dilate(mask, kernel, iterations=2)
     contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
     # print(len(contours))
     for contour in contours:
@@ -35,7 +37,7 @@ def recognize_center(img):
 
     _, mask = find_biggest_contour(mask)
     # cv2.imwrite("./largest_contour.jpg",mask)
-    gray = cv2.GaussianBlur(mask, (41, 41), 0)
+    gray = cv2.GaussianBlur(mask, (5,5), 0)
     # cv2.imwrite("./blur.jpg",gray)
     edges = cv2.Canny(gray, 50, 100)
     # cv2.imwrite("edges.jpg",edges)
@@ -79,22 +81,25 @@ def main():
     video.start()
     stop_time = time.time() + 5
     counter = 0
-    with open('video.mjpg', 'wb') as f:
-        while stop_time >= time.time():
-            # Wait for the device to fill the buffer.
-            select.select((video,), (), ())
-            counter += 1
-            image_data = video.read_and_queue()
-            # image = Image.open(io.BytesIO(image_data))
-            # img = cv2.cvtColor(np.asarray(image),cv2.COLOR_RGB2BGR)
-            x = np.fromstring(image_data, dtype='uint8')
-            #decode the array into an image
-            img = cv2.imdecode(x, cv2.IMREAD_UNCHANGED)
-            cv2.imwrite("frames/image_{}.jpg".format(counter),img)
-            img_target = recognize_center(img)
-            cv2.imwrite("targets/target_{}.jpg".format(counter),img_target)
-            # f.write(image_data)
 
+    while stop_time >= time.time():
+        # Wait for the device to fill the buffer.
+        select.select((video,), (), ())
+        counter += 1
+        image_data = video.read_and_queue()
+        # image = Image.open(io.BytesIO(image_data))
+        # img = cv2.cvtColor(np.asarray(image),cv2.COLOR_RGB2BGR)
+        x = np.fromstring(image_data, dtype='uint8')
+        #decode the array into an image
+        img = cv2.imdecode(x, cv2.IMREAD_UNCHANGED)
+        cv2.imwrite("frames/image_{}.jpg".format(counter),img)
+        img_target = recognize_center(img)
+        cv2.imwrite("targets/target_{}.jpg".format(counter),img_target)
+
+        # k = cv2.waitKey(1) & 0xFF
+        # # press 'q' to exit
+        # if k == ord('q'):
+        #     break
     print("Total frames: {}".format(counter))
     video.close()
 
