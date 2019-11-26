@@ -79,7 +79,7 @@ def main():
     video.queue_all_buffers()
 
     video.start()
-    stop_time = time.time() + 250
+    stop_time = time.time() + 500
     counter = 0
 
     while stop_time >= time.time():
@@ -92,16 +92,15 @@ def main():
         x = np.fromstring(image_data, dtype='uint8')
         #decode the array into an image
         img = cv2.imdecode(x, cv2.IMREAD_UNCHANGED)
-        cv2.imwrite("frames/image_{}.jpg".format(counter),img)
+        # cv2.imwrite("frames/image_{}.jpg".format(counter),img)
         img_target = recognize_center(img)
-        cv2.imwrite("targets/target_{}.jpg".format(counter),img_target)
-
-        # k = cv2.waitKey(1) & 0xFF
-        # # press 'q' to exit
-        # if k == ord('q'):
+        # cv2.imwrite("targets/target_{}.jpg".format(counter),img_target)
+        # cv2.imshow("target",img_target)
+        # if cv2.waitKey(1) & 0xFF == ord('q'):
         #     break
     print("Total frames: {}".format(counter))
     video.close()
+    cv2.destroyAllWindows()
 
 
 if __name__ == '__main__':
