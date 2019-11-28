@@ -144,6 +144,25 @@ def run_EKF_measurement(state,measurement, P):
     return state, P
 
 
+def transform_camera_to_2d(pixel_coord):
+    # RMS Error: 0.1744614622584057
+    # camera matrix:
+    #  [[610.20180181   0.         338.32138155]
+    #  [  0.         608.82221759 233.43050486]
+    #  [  0.           0.           1.        ]]
+    # distortion coefficients:
+    #  [-4.48105576e-01  2.83494222e-01  1.45578074e-04 -2.10300503e-04
+    #  -1.35291600e-01]
+
+    fx = 610
+    cx = 320
+    cy = 240
+    intrinsic = np.array([[fx,0.0,cx,0.0],
+                [0.0,fx, cy,0.0],
+                [0.0,0.0, 1.0,0.0]] )
+    intrinsic_inv = np.linalg.inv(intrinsic)
+    print("s")
+    return intrinsic_inv @ pixel_coord
 
 
 def main():
@@ -222,6 +241,9 @@ def main():
             if(state[0] != 0):
                 cv2.circle(cimg, (int(state[0]),int(state[1])), 20, (255), 3)
 
+            pixel_coord = np.array([state[0],state[1],1])
+            world_2d_coord = transform_camera_to_2d(pixel_coord)
+            print(world_2d_coord)
             cv2.imshow('all',cimg)
 
         # close
