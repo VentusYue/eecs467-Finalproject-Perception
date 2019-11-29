@@ -7,6 +7,7 @@ import select
 import io
 from PIL import Image
 import v4l2capture
+import lcm
 
 SEARCH_SIZE = 80
 FRAME_WIDTH = 640
@@ -264,110 +265,130 @@ def transform_camera_to_2d(pixel_coord):
     print("s")
     return intrinsic_inv @ pixel_coord
 
+def cameraPose_handler(self, channel, data):
+    msg = camera_pose_xyt_t.decode(data)
+    self.camera_pose = (msg.x, msg.y)
+
+class Tracker():
+    def __init__(self):
+            # Global Variables
+        print("initialized")
+        self.lc = lcm.LCM()
+        lcmCameraPoseSub = self.lc.subscribe("CAMERA_POSE_CHANNEL", cameraPose_handler)
+        lcmCameraPoseSub.set_queue_capacity(1)
+
+        self.camera_pose = None
+
+    def run(self):
+        state = np.matrix('0.0;0.0;0.0;0.0') # x, y, xd, yd,
+
+        # P and Q matrices for EKF
+        P = np.matrix('10.0,0.0,0.0,0.0; \
+                    0.0,10.0,0.0,0.0; \
+                    0.0,0.0,10.0,0.0; \
+                    0.0,0.0,0.0,10.0' )
+
+
+        Q = np.matrix('2.0,0.0,0.0,0.0; \
+                    0.0,2.0,0.0,0.0; \
+                    0.0,0.0,2.0,0.0; \
+                    0.0,0.0,0.0,2.0')
+
+        measurement = np.matrix('0;0')
+        np.set_printoptions(formatter={'float': lambda x: "{0:0.2f}".format(x)})
+
+        # print basic info
+        print('python ' + platform.python_version())
+        print('opencv ' + cv2.__version__)
+        print('numpy ' + np.version.version)
+
+
+
+        # def main():
+        # open camera
+
+        video = v4l2capture.Video_device("/dev/video0")
+        size_x, size_y = video.set_format(FRAME_WIDTH, FRAME_HEIGHT, fourcc='MJPG')
+        video.create_buffers(60)
+        video.queue_all_buffers()
+        video.start()
+        stop_time = time.time() + 600
+        start_time = time.time()
+
+        prev_time = time.time()
+        i = 0
+
+        while(True):
+            if time.time() > stop_time:
+                break
+
+            now_time = time.time()
+            dt = now_time - prev_time
+
+            i+=1
+            # run the model every 0.01 s
+            if (dt > 0.01):
+                prev_time = now_time
+
+                state, P, J = run_EKF_model(state, P, Q, dt)
+
+            # read camera
+            # ret, frame = cap.read()
+            select.select((video,), (), ())
+            image_data = video.read_and_queue()
+            raw_image = np.fromstring(image_data, dtype='uint8')
+            frame = cv2.imdecode(raw_image, cv2.IMREAD_UNCHANGED)
+            ret = True;
+            print("frame: {}".format(i))
+            if ret == True:
+
+                # For initilization, process the whole image, otherwise, utilize the predicted position
+                if i < 5:
+                    mask, cimg, (x,y,r) = recognize_center_without_EKF(frame)
+                else:
+                    mask, cimg, (x,y,r) = recognize_center(frame,state[0],state[1])
+
+                # if i == 5:
+                #     break
+                # if x==0:
+                #     continue
+                measurement[0] = x
+                measurement[1] = y
+                if(measurement[0] != 0) and (measurement[1] != 0):
+                    print("run EKF")
+                    state, P = run_EKF_measurement(state, measurement, P)
+                else:
+                    print("no motion detected, continue")
+                    continue
+                print("x: {}, state 0: {}".format(x,state[0]))
+                if(x != 0):
+                    cv2.circle(cimg, (int(x), int(y)), 50, (255), 5)
+
+                if(state[0] != 0):
+                    cv2.circle(cimg, (int(state[0]),int(state[1])), 20, (255), 3)
+
+                msg = camera_pose_xyt_t()
+                msg.x = state[0]
+                msg.y = state[1]
+                self.lc.publish("CAMERA_POSE_XYT_CHANNEL", msg.encode())
+                # pixel_coord = np.array([state[0],state[1],1])
+                # world_2d_coord = transform_camera_to_2d(pixel_coord)
+                # print(world_2d_coord)
+                # cv2.imshow('all',cimg)
+
+            # close
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                break
+
+
+        print("Time {}, frames: {}".format(time.time()-start_time, i))
+        # clean up
+        video.close()
+        cv2.destroyAllWindows()
 
 def main():
-    # Global Variables
-    state = np.matrix('0.0;0.0;0.0;0.0') # x, y, xd, yd,
-
-    # P and Q matrices for EKF
-    P = np.matrix('10.0,0.0,0.0,0.0; \
-                0.0,10.0,0.0,0.0; \
-                0.0,0.0,10.0,0.0; \
-                0.0,0.0,0.0,10.0' )
-
-
-    Q = np.matrix('2.0,0.0,0.0,0.0; \
-                0.0,2.0,0.0,0.0; \
-                0.0,0.0,2.0,0.0; \
-                0.0,0.0,0.0,2.0')
-
-    measurement = np.matrix('0;0')
-    np.set_printoptions(formatter={'float': lambda x: "{0:0.2f}".format(x)})
-
-    # print basic info
-    print('python ' + platform.python_version())
-    print('opencv ' + cv2.__version__)
-    print('numpy ' + np.version.version)
-
-
-
-    # def main():
-    # open camera
-
-    video = v4l2capture.Video_device("/dev/video0")
-    size_x, size_y = video.set_format(FRAME_WIDTH, FRAME_HEIGHT, fourcc='MJPG')
-    video.create_buffers(60)
-    video.queue_all_buffers()
-    video.start()
-    stop_time = time.time() + 600
-    start_time = time.time()
-
-    prev_time = time.time()
-    i = 0
-
-    while(True):
-        if time.time() > stop_time:
-            break
-
-        now_time = time.time()
-        dt = now_time - prev_time
-
-        i+=1
-        # run the model every 0.01 s
-        if (dt > 0.01):
-            prev_time = now_time
-
-            state, P, J = run_EKF_model(state, P, Q, dt)
-
-        # read camera
-        # ret, frame = cap.read()
-        select.select((video,), (), ())
-        image_data = video.read_and_queue()
-        raw_image = np.fromstring(image_data, dtype='uint8')
-        frame = cv2.imdecode(raw_image, cv2.IMREAD_UNCHANGED)
-        ret = True;
-        print("frame: {}".format(i))
-        if ret == True:
-
-            # For initilization, process the whole image, otherwise, utilize the predicted position
-            if i < 5:
-                mask, cimg, (x,y,r) = recognize_center_without_EKF(frame)
-            else:
-                mask, cimg, (x,y,r) = recognize_center(frame,state[0],state[1])
-
-            # if i == 5:
-            #     break
-            # if x==0:
-            #     continue
-            measurement[0] = x
-            measurement[1] = y
-            if(measurement[0] != 0) and (measurement[1] != 0):
-                print("run EKF")
-                state, P = run_EKF_measurement(state, measurement, P)
-            else:
-                print("no motion detected, continue")
-                continue
-            print("x: {}, state 0: {}".format(x,state[0]))
-            if(x != 0):
-                cv2.circle(cimg, (int(x), int(y)), 50, (255), 5)
-
-            if(state[0] != 0):
-                cv2.circle(cimg, (int(state[0]),int(state[1])), 20, (255), 3)
-
-            pixel_coord = np.array([state[0],state[1],1])
-            # world_2d_coord = transform_camera_to_2d(pixel_coord)
-            # print(world_2d_coord)
-            # cv2.imshow('all',cimg)
-
-        # close
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break
-
-
-    print("Time {}, frames: {}".format(time.time()-start_time, i))
-    # clean up
-    video.close()
-    cv2.destroyAllWindows()
+    tracker = Tracker()
+    tracker.run()
 
 
 if __name__ == '__main__':
