@@ -23,8 +23,7 @@ USAGE
 
 import numpy as np
 import cv2
-from picamera.array import PiRGBArray
-from picamera import PiCamera
+
 
 font = cv2.FONT_HERSHEY_SIMPLEX
 
@@ -118,19 +117,6 @@ if __name__ == '__main__':
     f.write(str(dist_coefs.ravel()))
     f.close()
 
-    # Use new calibration to undistort camera feed, exit on ESC
-    new_camera_matrix, roi = cv2.getOptimalNewCameraMatrix(
-        camera_matrix, dist_coefs, (w, h), 1, (w, h))
-    while True:
-        camera.capture(rawCapture, format="bgr")
-        image = rawCapture.array
-        rgb_frame = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
-        rawCapture.truncate(0)
-        undistorted = cv2.undistort(
-            rgb_frame, camera_matrix, dist_coefs, None, new_camera_matrix)
-        cv2.imshow('camera', undistorted)
-        ch = 0xFF & cv2.waitKey(10)
-        if ch == 27:
-            break
+
 
     cv2.destroyAllWindows()

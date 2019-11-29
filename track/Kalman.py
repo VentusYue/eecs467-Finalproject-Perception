@@ -290,7 +290,7 @@ def main():
     video.create_buffers(60)
     video.queue_all_buffers()
     video.start()
-    stop_time = time.time() + 6
+    stop_time = time.time() + 600
     start_time = time.time()
 
     prev_time = time.time()

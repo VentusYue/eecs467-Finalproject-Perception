@@ -40,4 +40,4 @@ while stop_time >= time.time():
 
 print(counter)
 video.close()
-print("Saved video.mjpg (Size: " + str(size_x) + " x " + str(size_y) + ")")
+# print("Saved video.mjpg (Size: " + str(size_x) + " x " + str(size_y) + ")")
