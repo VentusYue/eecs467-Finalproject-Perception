@@ -66,9 +66,14 @@ def recognize_center(img, state_x,state_y):
 
     hsv = cv2.cvtColor(img_slice, cv2.COLOR_BGR2HSV)
 
-    lower_orange = np.array([2, 0, 50])
+    # lower_orange = np.array([2, 0, 50])
+    # upper_orange = np.array([20, 255, 200])
+    lower_orange = np.array([2, 0, 100])
     upper_orange = np.array([20, 255, 200])
     mask = cv2.inRange(hsv, lower_orange, upper_orange)
+    # lower_red = np.array([50, 0, 30])
+    # upper_red = np.array([100, 255, 200])
+    # mask = cv2.inRange(hsv, lower_red, upper_red)
     kernel = np.ones((3,3), np.uint8)
     mask = cv2.erode(mask, kernel, iterations=2)
     mask = cv2.dilate(mask, kernel, iterations=2)
@@ -312,12 +317,12 @@ class Tracker():
         video.create_buffers(60)
         video.queue_all_buffers()
         video.start()
-        stop_time = time.time() + 600
         start_time = time.time()
 
         prev_time = time.time()
         i = 0
-
+        counter = 0
+        stop_time = time.time() + 1000
         while(True):
             if time.time() > stop_time:
                 break
@@ -326,8 +331,9 @@ class Tracker():
             dt = now_time - prev_time
 
             i+=1
+            counter += 1
             # run the model every 0.01 s
-            if (dt > 0.01):
+            if (dt > 0.005):
                 prev_time = now_time
 
                 state, P, J = run_EKF_model(state, P, Q, dt)
@@ -343,7 +349,7 @@ class Tracker():
             if ret == True:
 
                 # For initilization, process the whole image, otherwise, utilize the predicted position
-                if i < 5:
+                if i < 10:
                     mask, cimg, (x,y,r) = recognize_center_without_EKF(frame)
                 else:
                     mask, cimg, (x,y,r) = recognize_center(frame,state[0],state[1])
@@ -359,18 +365,19 @@ class Tracker():
                     state, P = run_EKF_measurement(state, measurement, P)
                 else:
                     print("no motion detected, continue")
-                    continue
+                    # i = 0
+                    # continue
                 print("x: {}, state 0: {}".format(x,state[0]))
-                if(x != 0):
-                    cv2.circle(cimg, (int(x), int(y)), 50, (255), 5)
-
-                if(state[0] != 0):
-                    cv2.circle(cimg, (int(state[0]),int(state[1])), 20, (255), 3)
+                # if(x != 0):
+                #     cv2.circle(cimg, (int(x), int(y)), 50, (255), 5)
+                #
+                # if(state[0] != 0):
+                #     cv2.circle(cimg, (int(state[0]),int(state[1])), 20, (255), 3)
 
                 msg = camera_pose_xyt_t()
                 msg.x = state[0]
                 msg.y = state[1]
-                self.lc.publish("CAMERA_POSE_XYT_CHANNEL", msg.encode())
+                self.lc.publish("CAMERA_POSE_CHANNEL", msg.encode())
                 # pixel_coord = np.array([state[0],state[1],1])
                 # world_2d_coord = transform_camera_to_2d(pixel_coord)
                 # print(world_2d_coord)
@@ -381,7 +388,7 @@ class Tracker():
                 break
 
 
-        print("Time {}, frames: {}".format(time.time()-start_time, i))
+        print("Time {}, frames: {}".format(time.time()-start_time, counter))
         # clean up
         video.close()
         cv2.destroyAllWindows()
