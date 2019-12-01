@@ -5,7 +5,7 @@ Wu Yue, 2019
 This tool could be used to track a colored ball with any usb camera in high fps
 
 
-[Control part] (https://github.com/voyager1998/mecanumControl)
+[Control part](https://github.com/voyager1998/mecanumControl)
 
 ## Requirements
 - python3 > 3.5
