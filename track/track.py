@@ -13,6 +13,9 @@ SEARCH_SIZE = 80
 FRAME_WIDTH = 640
 FRAME_HEIGHT = 480
 
+
+# 327, 197
+
 import os
 os.sys.path.append('lcmtypes/')
 from lcmtypes import camera_pose_xyt_t
@@ -314,7 +317,7 @@ class Tracker():
 
         video = v4l2capture.Video_device("/dev/video0")
         size_x, size_y = video.set_format(FRAME_WIDTH, FRAME_HEIGHT, fourcc='MJPG')
-        video.create_buffers(60)
+        video.create_buffers(1)
         video.queue_all_buffers()
         video.start()
         start_time = time.time()
@@ -384,8 +387,8 @@ class Tracker():
                 # cv2.imshow('all',cimg)
 
             # close
-            if cv2.waitKey(1) & 0xFF == ord('q'):
-                break
+            # if cv2.waitKey(1) & 0xFF == ord('q'):
+            #     break
 
 
         print("Time {}, frames: {}".format(time.time()-start_time, counter))
