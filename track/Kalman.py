@@ -296,7 +296,7 @@ def main():
 
     video = v4l2capture.Video_device("/dev/video0")
     size_x, size_y = video.set_format(FRAME_WIDTH, FRAME_HEIGHT, fourcc='MJPG')
-    video.create_buffers(60)
+    video.create_buffers(1)
     video.queue_all_buffers()
     video.start()
     stop_time = time.time() + 10
@@ -346,7 +346,7 @@ def main():
                 state, P = run_EKF_measurement(state, measurement, P)
             else:
                 print("no motion detected, continue")
-                continue
+                # continue
             print("x: {}, state 0: {}".format(x,state[0]))
             if(x != 0):
                 cv2.circle(cimg, (int(x), int(y)), 50, (255), 5)
@@ -360,7 +360,7 @@ def main():
             # cv2.imshow('all',cimg)
 
         # close
-        if cv2.waitKey(1) & 0xFF == ord('q'):
+        if cv2.waitKey(0) & 0xFF == ord('q'):
             break
 
 

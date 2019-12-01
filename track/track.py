@@ -347,6 +347,7 @@ class Tracker():
             image_data = video.read_and_queue()
             raw_image = np.fromstring(image_data, dtype='uint8')
             frame = cv2.imdecode(raw_image, cv2.IMREAD_UNCHANGED)
+            # frame = cv2.imdecode(np.frombuffer(image_data, dtype=np.uint8), cv2.IMREAD_COLOR)
             ret = True;
             print("frame: {}".format(i))
             if ret == True:
@@ -371,11 +372,11 @@ class Tracker():
                     # i = 0
                     # continue
                 print("x: {}, state 0: {}".format(x,state[0]))
-                # if(x != 0):
-                #     cv2.circle(cimg, (int(x), int(y)), 50, (255), 5)
-                #
-                # if(state[0] != 0):
-                #     cv2.circle(cimg, (int(state[0]),int(state[1])), 20, (255), 3)
+                if(x != 0):
+                    cv2.circle(cimg, (int(x), int(y)), 50, (255), 5)
+
+                if(state[0] != 0):
+                    cv2.circle(cimg, (int(state[0]),int(state[1])), 20, (255), 3)
 
                 msg = camera_pose_xyt_t()
                 msg.x = state[0]
@@ -387,8 +388,8 @@ class Tracker():
                 # cv2.imshow('all',cimg)
 
             # close
-            # if cv2.waitKey(1) & 0xFF == ord('q'):
-            #     break
+            if cv2.waitKey(0) & 0xFF == ord('q'):
+                break
 
 
         print("Time {}, frames: {}".format(time.time()-start_time, counter))
