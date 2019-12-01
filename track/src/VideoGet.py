@@ -6,6 +6,10 @@ os.sys.path.append('../lcmtypes/')
 from lcmtypes import camera_pose_xyt_t
 
 class VideoGet:
+    """
+    Class to get video stream from a usb camera using the mjpg format
+    """
+
     def __init__(self, src=0):
         # initialize camera, set format to mjpeg
         self.stream = cv2.VideoCapture(src)
