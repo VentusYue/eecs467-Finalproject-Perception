@@ -9,10 +9,9 @@ from PIL import Image
 import v4l2capture
 import lcm
 import numpy as np
+from FpsCounter import FpsCounter
 
 SEARCH_SIZE = 80
-
-
 
 def find_biggest_contour(image):
     image = image.copy()
@@ -281,6 +280,7 @@ class VideoTracker:
         print("initialized")
         self.frame = frame
         self.stopped = False
+        self.fps_tracker = FpsCounter().start()
 
         # initialize lcm
         self.lc = lcm.LCM()
@@ -290,10 +290,10 @@ class VideoTracker:
         self.camera_pose = None
 
     def start(self):
-        Thread(target=self.show, args=()).start()
+        Thread(target=self.run, args=()).start()
         return self
 
-    def show(self):
+    def run(self):
         # x, y, xd, yd,
         state = np.matrix('0.0;0.0;0.0;0.0')
 
@@ -323,9 +323,11 @@ class VideoTracker:
         start_time = time.time()
         prev_time = time.time()
         stop_time = time.time() + 10
+        self.fps_tracker.start()
 
         # main loop
         while not self.stopped:
+            fps_main.increment()
             if time.time() > stop_time:
                 break
             now_time = time.time()
@@ -380,4 +382,5 @@ class VideoTracker:
 
     def stop(self):
         self.stopped = True
+        print("Tracker fps: {}".format(self.fps_tracker.fps()))
         cv2.destroyAllWindows()
