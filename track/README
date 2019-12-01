@@ -1,11 +1,16 @@
 2019 Wu Yue
 
-Introduction
-============
+## Introduction
 
-This tracker could be used to track a colored ball with any usb camera in high fps
 
-Example
-=======
+This tool could be used to track a colored ball with any usb camera in high fps
 
-run src/track.py
+## Dependency
+ubuntu > 16.04
+opencv > 3.5.3
+v4l2-ctrl
+lcm
+
+## Example
+
+python3 src/track.py
