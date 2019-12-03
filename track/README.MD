@@ -20,8 +20,10 @@ Notice that hsv range is the most critical for detection
 python3 src/track.py
 ```
 There are two critical global parameters to be noticed
-1. SEARCH_SIZE: area of pixels to search for the kalman filter,
+1. SEARCH_SIZE:
+area of pixels to search for the kalman filter,
 decrease the size would: 1. speed up fps, 2. narrow the horizon.
 40 is a sample value for our pendulum
-2. TIME_SPAN: run time for tracking program (in second),
+2. TIME_SPAN:
+run time for tracking program (in second),
 I haven't figure out how to kill thread properly, please ctrl+c to stop it for now
