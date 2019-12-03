@@ -1,6 +1,5 @@
 from threading import Thread
 import cv2
-import os
 
 class VideoGet:
     """

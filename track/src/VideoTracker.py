@@ -5,14 +5,19 @@ import sys
 import time
 import select
 import io
-from PIL import Image
 import v4l2capture
 import lcm
 import numpy as np
+import os
+from PIL import Image
 from FpsCounter import FpsCounter
 
-SEARCH_SIZE = 80
+os.sys.path.append('../lcmtypes/')
+from lcmtypes import camera_pose_xyt_t
 
+SEARCH_SIZE = 80
+FRAME_WIDTH = 640
+FRAME_HEIGHT = 480
 def find_biggest_contour(image):
     image = image.copy()
     contours, hierarchy = cv2.findContours(image, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
@@ -280,7 +285,7 @@ class VideoTracker:
         print("initialized")
         self.frame = frame
         self.stopped = False
-        self.fps_tracker = FpsCounter().start()
+        # self.fps_tracker = FpsCounter()
 
         # initialize lcm
         self.lc = lcm.LCM()
@@ -322,18 +327,25 @@ class VideoTracker:
         counter = 0
         start_time = time.time()
         prev_time = time.time()
-        stop_time = time.time() + 10
-        self.fps_tracker.start()
+        stop_time = time.time() + 5
+        # self.fps_tracker.start()
 
         # main loop
         while not self.stopped:
-            fps_main.increment()
-            if time.time() > stop_time:
-                break
+            # self.fps_tracker.increment()
+            print("tracker udpate")
+            if counter > 1000:
+                print("Time {}, frames: {}".format(time.time()-start_time, counter))
+                self.stop()
+            # if time.time() > stop_time:
+            #     print("Time {}, frames: {}".format(time.time()-start_time, counter))
+            #     self.stop()
+                # break
             now_time = time.time()
             dt = now_time - prev_time
             i += 1
             counter += 1
+
             # run EKF model every 0.005 s
             if dt > 0.005:
                 prev_time = now_time
@@ -341,46 +353,47 @@ class VideoTracker:
 
 
             print("frame: {}".format(i))
-            if self.frame != None:
-                if i < 10:
-                    mask, cimg, (x,y,r) = recognize_center_without_EKF(self.frame)
-                else:
-                    mask, cimg, (x,y,r) = recognize_center(self.frame,state[0],state[1])
+            if i < 10:
+                mask, cimg, (x,y,r) = recognize_center_without_EKF(self.frame)
+            else:
+                mask, cimg, (x,y,r) = recognize_center(self.frame,state[0],state[1])
 
-                # if i == 5:
-                #     break
-                # if x==0:
-                #     continue
-                measurement[0] = x
-                measurement[1] = y
-                if(measurement[0] != 0) and (measurement[1] != 0):
-                    print("run EKF")
-                    state, P = run_EKF_measurement(state, measurement, P)
-                else:
-                    print("no motion detected, continue")
-                    # i = 0
-                    # continue
-                print("x: {}, state 0: {}".format(x,state[0]))
-                if(x != 0):
-                    cv2.circle(cimg, (int(x), int(y)), 50, (255), 5)
+            # if i == 5:
+            #     break
+            # if x==0:
+            #     continue
+            measurement[0] = x
+            measurement[1] = y
+            if(measurement[0] != 0) and (measurement[1] != 0):
+                print("run EKF")
+                state, P = run_EKF_measurement(state, measurement, P)
+            else:
+                print("no motion detected, continue")
+                # i = 0
+                # continue
+            print("x: {}, state 0: {}".format(x,state[0]))
+            if(x != 0):
+                cv2.circle(cimg, (int(x), int(y)), 50, (255), 5)
 
-                if(state[0] != 0):
-                    cv2.circle(cimg, (int(state[0]),int(state[1])), 20, (255), 3)
+            if(state[0] != 0):
+                cv2.circle(cimg, (int(state[0]),int(state[1])), 20, (255), 3)
 
-                msg = camera_pose_xyt_t()
-                msg.x = state[0]
-                msg.y = state[1]
-                self.lc.publish("CAMERA_POSE_CHANNEL", msg.encode())
-                # pixel_coord = np.array([state[0],state[1],1])
-                # world_2d_coord = transform_camera_to_2d(pixel_coord)
-                # print(world_2d_coord)
-                # cv2.imshow('all',cimg)
+            msg = camera_pose_xyt_t()
+            msg.x = state[0]
+            msg.y = state[1]
+            self.lc.publish("CAMERA_POSE_CHANNEL", msg.encode())
 
-            if cv2.waitKey(1) == ord("q"):
-                self.stopped = True
-                print("Time {}, frames: {}".format(time.time()-start_time, counter))
+            # pixel_coord = np.array([state[0],state[1],1])
+            # world_2d_coord = transform_camera_to_2d(pixel_coord)
+            # print(world_2d_coord)
+            # cv2.imshow('all',cimg)
+            # cv2.imshow('all',self.frame)
+
+            # if cv2.waitKey(0) == ord("q"):
+            #     self.stopped = True
+            #     print("Time {}, frames: {}".format(time.time()-start_time, counter))
 
     def stop(self):
         self.stopped = True
-        print("Tracker fps: {}".format(self.fps_tracker.fps()))
+        # print("Tracker fps: {}".format(self.fps_tracker.fps()))
         cv2.destroyAllWindows()

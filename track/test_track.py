@@ -348,6 +348,7 @@ class Tracker():
             # frame = cv2.imdecode(np.frombuffer(image_data, dtype=np.uint8), cv2.IMREAD_COLOR)
             ret, frame = video.read()
             print("frame: {}".format(i))
+            ret == False
             if ret == True:
 
                 # For initilization, process the whole image, otherwise, utilize the predicted position

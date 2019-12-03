@@ -13,6 +13,11 @@ class FpsCounter:
         self._start_time = time.time()
         return self
 
+    def end(self):
+        if time.time() - self._start_time > 5:
+            return True
+        return False
+
     def increment(self):
         self._num_occurrences += 1
 

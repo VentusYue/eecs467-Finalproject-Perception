@@ -325,7 +325,7 @@ class Tracker():
         prev_time = time.time()
         i = 0
         counter = 0
-        stop_time = time.time() + 1000
+        stop_time = time.time() + 10
         while(True):
             if time.time() > stop_time:
                 break

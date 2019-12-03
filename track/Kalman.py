@@ -357,7 +357,7 @@ def main():
             pixel_coord = np.array([state[0],state[1],1])
             # world_2d_coord = transform_camera_to_2d(pixel_coord)
             # print(world_2d_coord)
-            # cv2.imshow('all',cimg)
+            cv2.imshow('all',cimg)
 
         # close
         if cv2.waitKey(0) & 0xFF == ord('q'):
