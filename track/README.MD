@@ -15,7 +15,7 @@ Then launch the detection code, which would generate results with each processin
 python3 detect.py
 ```
 Notice that hsv range is the most critical for detection
-## Track
+## Tracking Tuning
 ```
 python3 src/track.py
 ```
