@@ -21,7 +21,6 @@ filename = "no-detection.jpg"
 img = cv2.imread(filename)
 hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
 
-
 # lower_orange = np.array([5, 0, 0])
 # upper_orange = np.array([25, 200, 255])
 # mask = cv2.inRange(hsv, lower_orange, upper_orange)
@@ -35,15 +34,7 @@ hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
 # upper_red = np.array([180, 255, 200])
 # mask2 = cv2.inRange(hsv, lower_red, upper_red)
 
-'''
-[h,s,v] -> range[0:180, 0:255, 0:255]
-1. s don't need to be changed
-2. h, is most critical. 170:10 is red(5:20 is close to orange)
-3. v, stands for lighting, 0:20, and 200:255 are likely ranges for extreme conditions,
 
-Normally, you can do a manualy binary search
-
-'''
 
 # setting for the student lounge
 lower_red = np.array([0, 0, 20])
