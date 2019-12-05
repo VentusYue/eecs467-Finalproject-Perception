@@ -15,8 +15,8 @@ def find_biggest_contour(image):
     return biggest_contour, mask
 
 
-filename = "image.jpg"
-# filename = "incorrect1.jpg"
+# filename = "image.jpg"
+filename = "no-detection.jpg"
 
 img = cv2.imread(filename)
 hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
@@ -26,14 +26,31 @@ hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
 # upper_orange = np.array([25, 200, 255])
 # mask = cv2.inRange(hsv, lower_orange, upper_orange)
 
+# setting for the 467 lab
 # lower_red = np.array([0, 50, 100])
-# upper_red = np.array([10, 200, 255])
+# upper_red = np.array([8, 255, 200])
+# mask1 = cv2.inRange(hsv, lower_red, upper_red)
+#
+# lower_red = np.array([170, 50, 100])
+# upper_red = np.array([180, 255, 200])
+# mask2 = cv2.inRange(hsv, lower_red, upper_red)
 
-lower_red = np.array([0, 50, 100])
+'''
+[h,s,v] -> range[0:180, 0:255, 0:255]
+1. s don't need to be changed
+2. h, is most critical. 170:10 is red(5:20 is close to orange)
+3. v, stands for lighting, 0:20, and 200:255 are likely ranges for extreme conditions,
+
+Normally, you can do a manualy binary search
+
+'''
+
+# setting for the student lounge
+lower_red = np.array([0, 0, 20])
 upper_red = np.array([8, 255, 200])
 mask1 = cv2.inRange(hsv, lower_red, upper_red)
 
-lower_red = np.array([170, 50, 100])
+lower_red = np.array([170, 0, 20])
 upper_red = np.array([180, 255, 200])
 mask2 = cv2.inRange(hsv, lower_red, upper_red)
 mask = cv2.bitwise_xor(mask1, mask2)
@@ -56,13 +73,16 @@ cv2.imwrite("./contour.jpg", img)
 
 _, mask = find_biggest_contour(mask)
 cv2.imwrite("./largest_contour.jpg",mask)
-gray = cv2.GaussianBlur(mask, (5, 5), 0)
+gray = cv2.GaussianBlur(mask, (3, 3), 0)
 cv2.imwrite("./blur.jpg",gray)
 edges = cv2.Canny(gray, 50, 100)
 cv2.imwrite("edges.jpg",edges)
 
+# circles = cv2.HoughCircles(edges, cv2.HOUGH_GRADIENT,
+#     1, 100, param1=50, param2=20, minRadius=10, maxRadius=500)
 circles = cv2.HoughCircles(edges, cv2.HOUGH_GRADIENT,
-    1, 100, param1=50, param2=20, minRadius=10, maxRadius=500)
+    1, minDist=100, param1=50, param2=15, minRadius=10, maxRadius=50)
+
 
 center_x = 0;
 center_y = 0;

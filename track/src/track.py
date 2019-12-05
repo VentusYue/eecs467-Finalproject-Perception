@@ -8,7 +8,7 @@ import io
 from PIL import Image
 import v4l2capture
 
-TIME_SPAN = 100
+TIME_SPAN = 200
 SEARCH_SIZE = 40
 FRAME_WIDTH = 640
 FRAME_HEIGHT = 480
@@ -73,14 +73,28 @@ def recognize_center(img, state_x,state_y):
     # upper_orange = np.array([20, 255, 200])
     # mask = cv2.inRange(hsv, lower_orange, upper_orange)
 
-    lower_red = np.array([0, 50, 100])
-    upper_red = np.array([8, 255, 200])
+    # setting for the lab
+    # lower_red = np.array([0, 50, 100])
+    # upper_red = np.array([8, 255, 200])
+    # mask1 = cv2.inRange(hsv, lower_red, upper_red)
+    #
+    # lower_red = np.array([170, 50, 100])
+    # upper_red = np.array([180, 255, 200])
+    # mask2 = cv2.inRange(hsv, lower_red, upper_red)
+    # mask = cv2.bitwise_xor(mask1, mask2)
+
+    # setting for the student lounge
+
+    lower_red = np.array([0, 0, 20])
+    upper_red = np.array([15, 255, 200])
     mask1 = cv2.inRange(hsv, lower_red, upper_red)
 
-    lower_red = np.array([170, 50, 100])
+    lower_red = np.array([170, 0, 20])
     upper_red = np.array([180, 255, 200])
     mask2 = cv2.inRange(hsv, lower_red, upper_red)
     mask = cv2.bitwise_xor(mask1, mask2)
+    cv2.imwrite("./coloredmask.jpg", mask)
+
 
     kernel = np.ones((3,3), np.uint8)
     mask = cv2.erode(mask, kernel, iterations=2)
@@ -99,13 +113,13 @@ def recognize_center(img, state_x,state_y):
 
     _, mask = find_biggest_contour(mask)
     # cv2.imwrite("./largest_contour.jpg",mask)
-    gray = cv2.GaussianBlur(mask, (5,5), 0)
+    gray = cv2.GaussianBlur(mask, (3,3), 0)
     # cv2.imwrite("./blur.jpg",gray)
     edges = cv2.Canny(mask1, 50, 100)
     # cv2.imwrite("edges.jpg",edges)
 
     circles = cv2.HoughCircles(edges, cv2.HOUGH_GRADIENT,
-        1, 100, param1=50, param2=20, minRadius=10, maxRadius=500)
+    1, minDist=100, param1=50, param2=15, minRadius=10, maxRadius=50)
 
     center_x = 0;
     center_y = 0;
@@ -136,22 +150,37 @@ def recognize_center(img, state_x,state_y):
     return mask, img, (center_x,center_y,max)
 
 def recognize_center_without_EKF(img):
+    cv2.imwrite("test_img.jpg",img)
     hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
 
     # lower_orange = np.array([2, 0, 50])
     # upper_orange = np.array([20, 255, 200])
     # mask = cv2.inRange(hsv, lower_orange, upper_orange)
 
-    lower_red = np.array([0, 50, 100])
-    upper_red = np.array([8, 255, 200])
+    # setting for lab
+    # lower_red = np.array([0, 50, 100])
+    # upper_red = np.array([8, 255, 200])
+    # mask1 = cv2.inRange(hsv, lower_red, upper_red)
+    #
+    # lower_red = np.array([170, 50, 100])
+    # upper_red = np.array([180, 255, 200])
+    # mask2 = cv2.inRange(hsv, lower_red, upper_red)
+    # mask = cv2.bitwise_xor(mask1, mask2)
+
+    # setting for student lounge
+    lower_red = np.array([0, 0, 20])
+    upper_red = np.array([15, 255, 200])
     mask1 = cv2.inRange(hsv, lower_red, upper_red)
 
-    lower_red = np.array([170, 50, 100])
+    lower_red = np.array([170, 0, 20])
     upper_red = np.array([180, 255, 200])
     mask2 = cv2.inRange(hsv, lower_red, upper_red)
     mask = cv2.bitwise_xor(mask1, mask2)
-
-
+    # cv2.imwrite("./coloredmask.jpg", mask)
+    #
+    #
+    #
+    # cv2.imwrite("coloredmask.jpg",mask)
 
     kernel = np.ones((3,3), np.uint8)
     mask = cv2.erode(mask, kernel, iterations=2)
@@ -169,13 +198,13 @@ def recognize_center_without_EKF(img):
 
     _, mask = find_biggest_contour(mask)
     # cv2.imwrite("./largest_contour.jpg",mask)
-    gray = cv2.GaussianBlur(mask, (5,5), 0)
+    gray = cv2.GaussianBlur(mask, (3,3), 0)
     # cv2.imwrite("./blur.jpg",gray)
     edges = cv2.Canny(gray, 50, 100)
     # cv2.imwrite("edges.jpg",edges)
 
     circles = cv2.HoughCircles(edges, cv2.HOUGH_GRADIENT,
-        1, 100, param1=50, param2=20, minRadius=10, maxRadius=500)
+        1, minDist=100, param1=50, param2=15, minRadius=10, maxRadius=50)
 
     center_x = 0;
     center_y = 0;
@@ -198,6 +227,7 @@ def recognize_center_without_EKF(img):
         # cv2.circle(img, (center_x, center_y), 3, (255, 255, 0), -1)
     else:
         print("no circles")
+        cv2.imwrite("../Detection/no-detection.jpg",img)
 
     print("center of the target is: ({}, {}), radius: {}".format(center_x,center_y, max))
     # cv2.imwrite("circles.jpg",img)
@@ -351,7 +381,7 @@ def main():
         if ret == True:
 
             # For initilization, process the whole image, otherwise, utilize the predicted position
-            if i < 5:
+            if i < 10:
                 mask, cimg, (x,y,r) = recognize_center_without_EKF(frame)
             else:
                 mask, cimg, (x,y,r) = recognize_center(frame,state[0],state[1])
