@@ -8,7 +8,7 @@ import io
 from PIL import Image
 import v4l2capture
 
-TIME_SPAN = 200
+TIME_SPAN = 10
 SEARCH_SIZE = 40
 FRAME_WIDTH = 640
 FRAME_HEIGHT = 480
@@ -93,7 +93,7 @@ def recognize_center(img, state_x,state_y):
     upper_red = np.array([180, 255, 200])
     mask2 = cv2.inRange(hsv, lower_red, upper_red)
     mask = cv2.bitwise_xor(mask1, mask2)
-    cv2.imwrite("./coloredmask.jpg", mask)
+    # cv2.imwrite("./coloredmask.jpg", mask)
 
 
     kernel = np.ones((3,3), np.uint8)
@@ -150,7 +150,7 @@ def recognize_center(img, state_x,state_y):
     return mask, img, (center_x,center_y,max)
 
 def recognize_center_without_EKF(img):
-    cv2.imwrite("test_img.jpg",img)
+    # cv2.imwrite("test_img.jpg",img)
     hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
 
     # lower_orange = np.array([2, 0, 50])
@@ -227,7 +227,7 @@ def recognize_center_without_EKF(img):
         # cv2.circle(img, (center_x, center_y), 3, (255, 255, 0), -1)
     else:
         print("no circles")
-        cv2.imwrite("../Detection/no-detection.jpg",img)
+        # cv2.imwrite("../Detection/no-detection.jpg",img)
 
     print("center of the target is: ({}, {}), radius: {}".format(center_x,center_y, max))
     # cv2.imwrite("circles.jpg",img)
@@ -397,8 +397,9 @@ def main():
                 state, P = run_EKF_measurement(state, measurement, P)
             else:
                 print("no motion detected, continue")
+
                 # continue
-            print("x: {}, state 0: {}".format(x,state[0]))
+            print("x: {}, y:{}. state 0: {}, state 1: {}".format(x,y,state[0],state[1]))
             # if(x != 0):
             #     cv2.circle(cimg, (int(x), int(y)), 50, (255), 5)
             #

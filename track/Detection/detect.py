@@ -15,8 +15,8 @@ def find_biggest_contour(image):
     return biggest_contour, mask
 
 
-# filename = "image.jpg"
-filename = "no-detection.jpg"
+filename = "image.jpg"
+# filename = "no-detection.jpg"
 
 img = cv2.imread(filename)
 hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
