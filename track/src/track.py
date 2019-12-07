@@ -8,7 +8,7 @@ import io
 from PIL import Image
 import v4l2capture
 
-TIME_SPAN = 10
+TIME_SPAN = 200
 SEARCH_SIZE = 40
 FRAME_WIDTH = 640
 FRAME_HEIGHT = 480
@@ -101,9 +101,12 @@ def recognize_center(img, state_x,state_y):
     mask = cv2.dilate(mask, kernel, iterations=2)
     contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
     # print(len(contours))
+    isCircleFound = 1
+
     if len(contours)==0:
         print("no ball detected")
-        return mask, img, (0,0,0)
+        isCircleFound = 0
+        return mask, img, (0,0,0), isCircleFound
     # for contour in contours:
     #     cv2.drawContours(img, contour, -1, (0, 255, 0), thickness = cv2.FILLED)
     # mask = max(contours, key=cv2.contourArea)
@@ -121,12 +124,12 @@ def recognize_center(img, state_x,state_y):
     circles = cv2.HoughCircles(edges, cv2.HOUGH_GRADIENT,
     1, minDist=100, param1=50, param2=15, minRadius=10, maxRadius=50)
 
-    center_x = 0;
-    center_y = 0;
-    max = 0;
+    center_x = 0
+    center_y = 0
+    max = 0
     if circles is not None:
         print("circles: ",len(circles[0]))
-
+        isCircleFound = 1
         for circle in circles[0]:
             x = int(circle[0])
             y = int(circle[1])
@@ -144,10 +147,12 @@ def recognize_center(img, state_x,state_y):
         # cv2.circle(img, (center_x, center_y), 3, (255, 255, 0), -1)
     else:
         print("no circles")
+        isCircleFound = 0
+
 
     print("center of the target is: ({}, {}), radius: {}".format(center_x,center_y, max))
     # cv2.imwrite("circles.jpg",img)
-    return mask, img, (center_x,center_y,max)
+    return mask, img, (center_x,center_y,max), isCircleFound
 
 def recognize_center_without_EKF(img):
     # cv2.imwrite("test_img.jpg",img)
@@ -206,9 +211,9 @@ def recognize_center_without_EKF(img):
     circles = cv2.HoughCircles(edges, cv2.HOUGH_GRADIENT,
         1, minDist=100, param1=50, param2=15, minRadius=10, maxRadius=50)
 
-    center_x = 0;
-    center_y = 0;
-    max = 0;
+    center_x = 0
+    center_y = 0
+    max = 0
     if circles is not None:
         print("circles: ",len(circles[0]))
 
@@ -359,6 +364,8 @@ def main():
     prev_time = time.time()
     i = 0
 
+    counter = 0
+
     while(True):
         if time.time() > stop_time:
             break
@@ -376,15 +383,21 @@ def main():
         # read camera
         # ret, frame = cap.read()
         frame = vs.read()
-        ret = True;
+        ret = True
         print("frame: {}".format(i))
         if ret == True:
 
             # For initilization, process the whole image, otherwise, utilize the predicted position
+            isCircleFound = 1
             if i < 10:
                 mask, cimg, (x,y,r) = recognize_center_without_EKF(frame)
             else:
-                mask, cimg, (x,y,r) = recognize_center(frame,state[0],state[1])
+                mask, cimg, (x,y,r), isCircleFound = recognize_center(frame,state[0],state[1])
+
+            if isCircleFound == 0:
+                counter += 1
+            else:
+                counter = 0
 
             # if i == 5:
             #     break
@@ -398,7 +411,14 @@ def main():
             else:
                 print("no motion detected, continue")
 
-                # continue
+            if counter > 5:
+                msg = camera_pose_xyt_t()
+                msg.x = -1
+                msg.y = -1
+                lc.publish("CAMERA_POSE_CHANNEL", msg.encode())
+                print("Ball went out of frame")
+                break
+
             print("x: {}, y:{}. state 0: {}, state 1: {}".format(x,y,state[0],state[1]))
             # if(x != 0):
             #     cv2.circle(cimg, (int(x), int(y)), 50, (255), 5)
@@ -423,7 +443,7 @@ def main():
     print("Time {}, frames: {}".format(time.time()-start_time, i))
     # clean up
     # vs.release()
-    cv2.destroyAllWindows()
+    # cv2.destroyAllWindows()
 
 
 if __name__ == '__main__':
