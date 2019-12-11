@@ -85,12 +85,12 @@ def recognize_center(img, state_x,state_y):
 
     # setting for the student lounge
 
-    lower_red = np.array([0, 0, 20])
-    upper_red = np.array([15, 255, 200])
+    lower_red = np.array([0, 100, 0])
+    upper_red = np.array([8, 240, 255])
     mask1 = cv2.inRange(hsv, lower_red, upper_red)
 
-    lower_red = np.array([170, 0, 20])
-    upper_red = np.array([180, 255, 200])
+    lower_red = np.array([160, 50, 0])
+    upper_red = np.array([180, 240, 255])
     mask2 = cv2.inRange(hsv, lower_red, upper_red)
     mask = cv2.bitwise_xor(mask1, mask2)
     # cv2.imwrite("./coloredmask.jpg", mask)
@@ -168,13 +168,23 @@ def recognize_center_without_EKF(img):
     # mask = cv2.bitwise_xor(mask1, mask2)
 
     # setting for student lounge
-    lower_red = np.array([0, 0, 20])
-    upper_red = np.array([15, 255, 200])
+    # lower_red = np.array([0, 0, 20])
+    # upper_red = np.array([15, 255, 200])
+    # mask1 = cv2.inRange(hsv, lower_red, upper_red)
+    #
+    # lower_red = np.array([170, 0, 20])
+    # upper_red = np.array([180, 255, 200])
+    # mask2 = cv2.inRange(hsv, lower_red, upper_red)
+
+    lower_red = np.array([0, 100, 0])
+    upper_red = np.array([8, 240, 255])
     mask1 = cv2.inRange(hsv, lower_red, upper_red)
 
-    lower_red = np.array([170, 0, 20])
-    upper_red = np.array([180, 255, 200])
+    lower_red = np.array([160, 50, 0])
+    upper_red = np.array([180, 240, 255])
     mask2 = cv2.inRange(hsv, lower_red, upper_red)
+
+
     mask = cv2.bitwise_xor(mask1, mask2)
     # cv2.imwrite("./coloredmask.jpg", mask)
     #
